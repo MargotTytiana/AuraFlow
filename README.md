@@ -1,5 +1,4 @@
 
-```markdown
 # 🌊 AuraFlow · Non-Visual Interactive White Noise & Focus Soundscape Generator
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
@@ -65,7 +64,6 @@ npm install
 
 # 3. Start the development server
 npm run dev
-```
 
 Open the local URL shown in your terminal (e.g., `http://localhost:5173`), click **「▶ Start Experience」** and grant camera permission to begin.
 
