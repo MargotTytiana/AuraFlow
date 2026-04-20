@@ -1,0 +1,86 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0a0f0f;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+#status_canvas {
+  width: 80px;
+  height: 80px;
+  margin: 20vh auto 20px;
+  display: block;
+  border-radius: 50%;
+  background: rgba(42, 90, 90, 0.1);
+  box-shadow: 0 0 30px rgba(0, 255, 200, 0.1);
+}
+
+#debug_canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+#debug_canvas.debug-hidden {
+  display: none;
+}
+
+.start-button {
+  background: #2a5a5a;
+  color: #e0f0f0;
+  border: none;
+  border-radius: 40px;
+  padding: 14px 32px;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(42, 90, 90, 0.4);
+  transition: all 0.2s ease;
+  margin: 20px 0;
+}
+
+.start-button:hover {
+  background: #3a7a7a;
+  transform: scale(1.02);
+}
+
+.start-button.running {
+  background: #1a3a3a;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.scene-select {
+  background: transparent;
+  color: #a0c0c0;
+  border: 1px solid #2a5a5a;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  outline: none;
+  margin-top: 20px;
+}
+
+.scene-select option {
+  background: #0a0f0f;
+}

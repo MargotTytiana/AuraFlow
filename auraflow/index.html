@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>AuraFlow · 非视觉白噪音</title>
+  <link rel="stylesheet" href="/src/styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2a5a5a">
+</head>
+<body>
+  <div id="app">
+    <!-- 视频元素（隐藏，仅用于手势识别） -->
+    <video id="input_video" style="display: none;"></video>
+    
+    <!-- 极简状态指示器 Canvas -->
+    <canvas id="status_canvas" width="64" height="64"></canvas>
+    
+    <!-- 调试模式叠加层（仅当 URL 参数 ?debug 时显示） -->
+    <canvas id="debug_canvas" class="debug-hidden"></canvas>
+    
+    <!-- 开始按钮（用于启动音频上下文） -->
+    <button id="start_btn" class="start-button">▶ 启动体验</button>
+    
+    <!-- 场景切换（简单下拉菜单） -->
+    <select id="scene_select" class="scene-select">
+      <option value="meditation">🧘 深度冥想</option>
+      <option value="focus">💡 专注心流</option>
+      <option value="sleep">🌙 睡前助眠</option>
+    </select>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
