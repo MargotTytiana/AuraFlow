@@ -36,3 +36,27 @@ public/
 ├── icons/         # PWA 图标
 └── manifest.json  # PWA 清单（Vite 原样复制）
 ```
+
+src/types/gesture.ts
+src/types/scene.ts
+src/utils/math.ts
+src/core/VisionCapture.ts
+src/core/GestureAnalyzer.ts
+src/core/AudioEngine.ts
+src/scenes/presets/meditation.ts
+src/scenes/presets/focus.ts
+src/scenes/presets/sleep.ts
+src/store/AppState.ts
+src/core/MappingEngine.ts
+src/ui/StatusIndicator.ts
+src/ui/DebugOverlay.ts
+src/App.ts
+
+src/main.ts
+src/styles.css
+index.html
+public/manifest.json
+vite.config.ts
+tsconfig.json
+package.json
+README.md
