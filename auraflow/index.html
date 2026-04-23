@@ -1,34 +1,235 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>AuraFlow · 非视觉白噪音</title>
-  <link rel="stylesheet" href="/src/styles.css">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#2a5a5a">
-</head>
-<body>
-  <div id="app">
-    <!-- 视频元素（隐藏，仅用于手势识别） -->
-    <video id="input_video" style="display: none;"></video>
-    
-    <!-- 极简状态指示器 Canvas -->
-    <canvas id="status_canvas" width="64" height="64"></canvas>
-    
-    <!-- 调试模式叠加层（仅当 URL 参数 ?debug 时显示） -->
-    <canvas id="debug_canvas" class="debug-hidden"></canvas>
-    
-    <!-- 开始按钮（用于启动音频上下文） -->
-    <button id="start_btn" class="start-button">▶ 启动体验</button>
-    
-    <!-- 场景切换（简单下拉菜单） -->
-    <select id="scene_select" class="scene-select">
-      <option value="meditation">🧘 深度冥想</option>
-      <option value="focus">💡 专注心流</option>
-      <option value="sleep">🌙 睡前助眠</option>
-    </select>
-  </div>
-  <script type="module" src="/src/main.ts"></script>
-</body>
-</html>
+/**
+ * styles.css
+ * Global styles for AuraFlow.
+ *
+ * Design principles:
+ *  - Near-black background keeps the environment recessive so the
+ *    user's attention stays on sound rather than the screen.
+ *  - All colours are defined as custom properties so any future
+ *    theming or accessibility overrides require a single-point change.
+ *  - Functional elements (button, indicator, error) are styled here.
+ *    Component-specific inline styles live in their own TS modules
+ *    (StatusIndicator, DebugOverlay) to keep co-location clean.
+ *  - No decorative styles — every rule serves a functional purpose.
+ */
+
+/* ─── Custom properties ──────────────────────────────────────────────────── */
+
+:root {
+  /* Background ramp — deepest black to a barely-visible surface */
+  --color-bg-base:    #0a0a0f;
+  --color-bg-surface: rgba(255, 255, 255, 0.05);
+  --color-bg-overlay: rgba(0, 0, 0, 0.45);
+
+  /* Text — primary for readable copy, muted for hints */
+  --color-text-primary: rgba(255, 255, 255, 0.90);
+  --color-text-muted:   rgba(255, 255, 255, 0.45);
+
+  /* Accent — used sparingly for interactive affordances */
+  --color-accent:       rgba(255, 255, 255, 0.18);
+  --color-accent-hover: rgba(255, 255, 255, 0.28);
+
+  /* Error state */
+  --color-error: rgba(255, 100, 100, 0.85);
+
+  /* Border */
+  --color-border: rgba(255, 255, 255, 0.12);
+
+  /* Shared radii */
+  --radius-pill:   9999px;
+  --radius-medium: 12px;
+
+  /* Shared transitions */
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.4s ease;
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-size-base: 16px;
+  --font-size-sm:   14px;
+  --font-size-xs:   12px;
+}
+
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin:     0;
+  padding:    0;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+
+html {
+  /* Prevent font size inflation on mobile after orientation change */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust:         100%;
+}
+
+body {
+  background:  var(--color-bg-base);
+  color:       var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size:   var(--font-size-base);
+  line-height: 1.5;
+
+  /* Ensure the body always fills the viewport, even on mobile with
+     dynamic browser chrome (address bar appearing / disappearing) */
+  min-height: 100dvh;
+  overflow:   hidden;
+
+  /* Prevent text selection during gesture interactions —
+     the user may accidentally drag across text while moving their hand */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ─── Hidden video element ───────────────────────────────────────────────── */
+
+/**
+ * The <video> element feeds frames to MediaPipe but must never be visible.
+ * display:none would prevent the browser from rendering frames into it
+ * on some platforms, so we use visibility + position instead.
+ */
+#input_video {
+  position:   absolute;
+  visibility: hidden;
+  width:      1px;
+  height:     1px;
+  /* Positioned off-screen as a belt-and-braces measure */
+  top:  -9999px;
+  left: -9999px;
+}
+
+/* ─── Debug canvas ───────────────────────────────────────────────────────── */
+
+/**
+ * Transparent overlay canvas used by DebugOverlay.ts.
+ * Sits above all other content but ignores pointer events so it
+ * never interferes with any future interactive UI elements.
+ * The .visible class is added by DebugOverlay when ?debug=true.
+ */
+#debug-canvas {
+  position:       fixed;
+  inset:          0;
+  width:          100%;
+  height:         100%;
+  pointer-events: none;
+  opacity:        0;
+  transition:     opacity var(--transition-slow);
+  z-index:        100;
+}
+
+#debug-canvas.visible {
+  opacity: 1;
+}
+
+/* ─── Start button ───────────────────────────────────────────────────────── */
+
+/**
+ * Centred launch button shown before the AudioContext and camera are
+ * initialised. Removed from the DOM by main.ts immediately on click.
+ *
+ * Intentionally minimal — the button should feel like an invitation
+ * to enter the experience, not a conventional software UI element.
+ */
+#start-btn {
+  /* Centre in viewport */
+  position:  fixed;
+  inset:     0;
+  margin:    auto;
+
+  /* Size */
+  width:     160px;
+  height:    48px;
+
+  /* Appearance */
+  background:    var(--color-bg-surface);
+  border:        1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color:         var(--color-text-primary);
+
+  /* Typography */
+  font-family: var(--font-sans);
+  font-size:   var(--font-size-sm);
+  letter-spacing: 0.03em;
+
+  /* Behaviour */
+  cursor:  pointer;
+  outline: none;
+
+  /* Transitions */
+  transition:
+    background    var(--transition-base),
+    border-color  var(--transition-base),
+    transform     var(--transition-base);
+
+  /* Ensure it floats above canvas and indicator */
+  z-index: 200;
+}
+
+#start-btn:hover {
+  background:   var(--color-accent-hover);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+#start-btn:active {
+  transform: scale(0.97);
+}
+
+/* Remove the default focus ring and replace with a visible custom one
+   for keyboard accessibility without breaking the minimal aesthetic */
+#start-btn:focus-visible {
+  outline:        2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 3px;
+}
+
+/* ─── Error message ──────────────────────────────────────────────────────── */
+
+/**
+ * Displayed by main.ts when App.init() throws.
+ * Styled to be noticeable but not alarming — consistent with the
+ * overall muted palette.
+ */
+#start-error {
+  position:   fixed;
+  inset:      0;
+  margin:     auto;
+  height:     fit-content;
+
+  color:      var(--color-error);
+  font-size:  var(--font-size-sm);
+  text-align: center;
+  padding:    0 24px;
+
+  /* Fade in so it does not flash abruptly */
+  animation: fadeIn 0.4s ease both;
+
+  z-index: 200;
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+
+/**
+ * Respects the user's operating system preference to reduce motion.
+ * Disables all transitions and animations for users who find movement
+ * uncomfortable or distracting.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:   0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:  0.01ms !important;
+  }
+}

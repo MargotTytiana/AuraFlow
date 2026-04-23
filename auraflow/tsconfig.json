@@ -1,19 +1,185 @@
+/**
+ * tsconfig.json
+ * TypeScript compiler configuration for AuraFlow.
+ *
+ * Role in the build pipeline:
+ *  Vite uses esbuild to transpile TypeScript at dev and build time —
+ *  it is fast but intentionally skips type checking.
+ *  This tsconfig exists solely for `tsc --noEmit` type checking,
+ *  run as part of the `npm run build` script before Vite bundles.
+ *  The two tools share the same path aliases so IDE resolution
+ *  and runtime resolution are always in sync.
+ *
+ * Type checking command:  tsc --noEmit
+ * Bundling command:       vite build
+ */
 {
   "compilerOptions": {
+
+    // ── Language target ──────────────────────────────────────────────────────
+
+    /**
+     * Emit ES2020 output features (optional chaining, nullish coalescing,
+     * BigInt, Promise.allSettled, globalThis, etc.).
+     * Matches the `build.target` in vite.config.ts — keeping them in sync
+     * prevents tsc from generating syntax that esbuild then has to downlevel.
+     */
     "target": "ES2020",
-    "useDefineForClassFields": true,
+
+    /**
+     * Use ES module syntax (import / export) throughout.
+     * Vite handles module bundling; tsc never needs to emit CommonJS.
+     */
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
+
+    // ── Module resolution ────────────────────────────────────────────────────
+
+    /**
+     * "bundler" resolution matches how Vite (via esbuild / Rollup) resolves
+     * modules at build time. It supports:
+     *  - Package.json "exports" field (used by @mediapipe/hands)
+     *  - Extension-less imports  (import './App' resolves to './App.ts')
+     *  - Path aliases defined in the `paths` section below
+     * Use this instead of "node16" / "nodenext" to avoid requiring explicit
+     * .js extensions on every relative import.
+     */
     "moduleResolution": "bundler",
+
+    /**
+     * Allow importing TypeScript files without their .ts extension.
+     * Required when moduleResolution is "bundler".
+     */
     "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+
+    /**
+     * Allow default imports from CommonJS modules that do not declare
+     * a default export (e.g. older @types/* packages).
+     * Prevents spurious "Module has no default export" errors.
+     */
+    "allowSyntheticDefaultImports": true,
+
+    /**
+     * Emit helpers (like __awaiter) as ES module imports from tslib
+     * rather than inlining them in every file.
+     * Not strictly needed since Vite handles this, but keeps tsc output
+     * consistent if ever run directly.
+     */
+    "esModuleInterop": true,
+
+    // ── Emit ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Do not write any .js / .d.ts output files.
+     * tsc is used only as a type checker here — Vite/esbuild handles
+     * all actual transpilation. Emitting files would create confusion
+     * about which output is authoritative.
+     */
     "noEmit": true,
+
+    /**
+     * Allow tsc to process .js files imported from node_modules.
+     * Required when consuming packages that ship plain JS with bundled types.
+     */
+    "allowJs": false,
+
+    // ── Strict type checking ──────────────────────────────────────────────────
+
+    /**
+     * Enable the full strict mode suite, which includes:
+     *  strictNullChecks        — null / undefined must be handled explicitly
+     *  strictFunctionTypes     — function parameter types checked contravariantly
+     *  strictPropertyInitialization — class fields must be assigned in constructor
+     *  noImplicitAny           — unannotated parameters default to never, not any
+     *  noImplicitThis          — `this` in functions must be typed explicitly
+     *  useUnknownInCatchVariables — catch clause variables are unknown, not any
+     */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+
+    /**
+     * Additional checks beyond `strict` that catch common mistakes:
+     *
+     *  noUnusedLocals       — error on declared but unreferenced local variables.
+     *                         Keeps the codebase clean as modules grow.
+     *  noUnusedParameters   — error on function parameters that are never read.
+     *                         Helps catch stale API signatures after refactors.
+     *  noFallthroughCasesInSwitch — every non-empty switch case must break/return.
+     *                         Prevents silent fall-through bugs in MappingEngine.
+     *  noUncheckedIndexedAccess — array[i] and record[key] return T | undefined.
+     *                         Forces null-checks on landmark array accesses in
+     *                         GestureAnalyzer — a real safety net for index bugs.
+     */
+    "noUnusedLocals":             true,
+    "noUnusedParameters":         true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess":   true,
+
+    // ── Library types ─────────────────────────────────────────────────────────
+
+    /**
+     * Include type definitions for:
+     *  ES2020     — matches the `target` setting above
+     *  DOM        — HTMLElement, AudioContext, navigator, fetch, etc.
+     *  DOM.Iterable — NodeList.forEach and other iterable DOM collections
+     *
+     * Not including "WebWorker" — AuraFlow runs entirely on the main thread.
+     */
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    // ── Skip lib checks ──────────────────────────────────────────────────────
+
+    /**
+     * Skip type checking of declaration files in node_modules.
+     * @mediapipe/hands ships some loose typings that would otherwise
+     * generate spurious errors unrelated to our own code.
+     * Our code is still fully checked — only .d.ts files are skipped.
+     */
+    "skipLibCheck": true,
+
+    // ── Source maps ───────────────────────────────────────────────────────────
+
+    /**
+     * Emit source map entries so that tsc diagnostics report the correct
+     * line numbers in the original .ts files rather than hypothetical
+     * transpiled output. IDE go-to-definition also benefits from this.
+     */
+    "sourceMap":        true,
+    "inlineSources":    true,
+
+    // ── Path aliases ──────────────────────────────────────────────────────────
+
+    /**
+     * `@/*` maps to `src/*`, mirroring the alias in vite.config.ts.
+     * Both tools must agree on this mapping:
+     *  - tsc uses `paths` + `baseUrl` for type resolution and IDE support
+     *  - Vite uses `resolve.alias` for runtime bundling
+     *
+     * Example: `import { clamp } from '@/utils/math'`
+     * resolves to `<root>/src/utils/math.ts` in both environments.
+     */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+
   },
-  "include": ["src"]
+
+  // ── Include / exclude ──────────────────────────────────────────────────────
+
+  /**
+   * Only type-check files inside src/.
+   * Configuration files (vite.config.ts, etc.) are excluded because they
+   * run in a Node.js environment and would require a separate tsconfig
+   * with Node types — mixing them would pollute the browser type namespace.
+   */
+  "include": ["src"],
+
+  /**
+   * Explicitly exclude test files and build output.
+   * dist/ should never contain .ts files, but listing it here prevents
+   * accidental inclusion if the directory is ever created manually.
+   */
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

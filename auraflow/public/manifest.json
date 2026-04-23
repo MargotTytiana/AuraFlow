@@ -1,13 +1,125 @@
 {
+  "/*": "─── Identity ────────────────────────────────────────────────────────────",
+
   "name":       "AuraFlow",
   "short_name": "AuraFlow",
-  "start_url":  "/",
-  "display":    "standalone",
+
+  "/*1": "Description shown in app stores and install prompts.",
+  "description": "Gesture-controlled ambient soundscape for meditation, focus, and sleep.",
+
+  "/*2": "─── Start behaviour ─────────────────────────────────────────────────────",
+
+  "/*3": "URL opened when the installed PWA is launched from the home screen.",
+  "start_url": "/",
+
+  "/*4": "Scope restricts which URLs are considered part of this PWA.",
+  "scope": "/",
+
+  "/*5": "─── Display ──────────────────────────────────────────────────────────────",
+
+  "/*6": [
+    "standalone: the app runs in its own window without browser chrome.",
+    "This is the closest to a native app feel — address bar, back button,",
+    "and tab bar are all hidden, maximising the immersive no-screen experience."
+  ],
+  "display": "standalone",
+
+  "/*7": [
+    "Fallback display modes in order of preference.",
+    "fullscreen would hide the status bar but is not supported everywhere.",
+    "minimal-ui is the last resort before falling back to browser tab."
+  ],
+  "display_override": ["standalone", "minimal-ui"],
+
+  "/*8": "Lock to portrait — landscape breaks the gesture interaction model.",
   "orientation": "portrait",
+
+  "/*9": "─── Colours ─────────────────────────────────────────────────────────────",
+
+  "/*10": "background_color is shown on the splash screen before the app paints.",
   "background_color": "#0a0a0f",
-  "theme_color":      "#0a0a0f",
+
+  "/*11": [
+    "theme_color tints the browser UI chrome (status bar on Android,",
+    "title bar on desktop) to match the app's dark aesthetic."
+  ],
+  "theme_color": "#0a0a0f",
+
+  "/*12": "─── Icons ────────────────────────────────────────────────────────────────",
+
+  "/*13": [
+    "Two sizes cover the full range of use cases:",
+    "  192px — Android home screen and splash screen.",
+    "  512px — Play Store listing, desktop install prompt, and high-DPI displays.",
+    "Both are placed in public/icons/ so Vite copies them unchanged to dist/."
+  ],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+    {
+      "src":   "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type":  "image/png",
+      "/*":    "purpose 'any' means the icon is used in all contexts.",
+      "purpose": "any"
+    },
+    {
+      "src":   "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type":  "image/png",
+      "/*":    "maskable allows Android to crop the icon into a circle or squircle.",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "/*14": "─── Shortcuts ────────────────────────────────────────────────────────────",
+
+  "/*15": [
+    "App shortcuts appear on long-press of the home screen icon (Android)",
+    "or right-click of the taskbar icon (desktop).",
+    "Each entry deep-links directly into a specific scene."
+  ],
+  "shortcuts": [
+    {
+      "name":      "深度冥想",
+      "short_name": "冥想",
+      "url":       "/?scene=meditation",
+      "description": "Start the deep meditation soundscape",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name":      "专注心流",
+      "short_name": "专注",
+      "url":       "/?scene=focus",
+      "description": "Start the focus flow soundscape",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name":      "助眠模式",
+      "short_name": "助眠",
+      "url":       "/?scene=sleep",
+      "description": "Start the sleep assistance soundscape",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+
+  "/*16": "─── Capabilities ─────────────────────────────────────────────────────────",
+
+  "/*17": [
+    "Declares that the app prefers to handle its own links rather than",
+    "opening them in the browser. Required for desktop PWA link capture."
+  ],
+  "handle_links": "preferred",
+
+  "/*18": "Enables launch queue so the app can respond to shortcut URL parameters.",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+
+  "/*19": "─── Screenshots (optional) ───────────────────────────────────────────────",
+
+  "/*20": [
+    "Screenshots are shown in install prompts on Chrome and Edge.",
+    "Add real screenshots to public/screenshots/ and uncomment this block",
+    "once the UI is finalised."
+  ],
+  "screenshots": []
 }

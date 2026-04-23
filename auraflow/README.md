@@ -51,12 +51,12 @@ src/core/MappingEngine.ts
 src/ui/StatusIndicator.ts
 src/ui/DebugOverlay.ts
 src/App.ts
-
 src/main.ts
 src/styles.css
 index.html
 public/manifest.json
 vite.config.ts
 tsconfig.json
+
 package.json
 README.md
