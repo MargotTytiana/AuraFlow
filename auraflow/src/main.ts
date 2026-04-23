@@ -21,6 +21,7 @@
  * All application logic lives in App.ts and the modules it assembles.
  */
 
+import './styles.css';
 import { App } from './App';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

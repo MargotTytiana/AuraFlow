@@ -1,235 +1,149 @@
-/**
- * styles.css
- * Global styles for AuraFlow.
- *
- * Design principles:
- *  - Near-black background keeps the environment recessive so the
- *    user's attention stays on sound rather than the screen.
- *  - All colours are defined as custom properties so any future
- *    theming or accessibility overrides require a single-point change.
- *  - Functional elements (button, indicator, error) are styled here.
- *    Component-specific inline styles live in their own TS modules
- *    (StatusIndicator, DebugOverlay) to keep co-location clean.
- *  - No decorative styles — every rule serves a functional purpose.
- */
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
 
-/* ─── Custom properties ──────────────────────────────────────────────────── */
+    <!--
+      viewport: width=device-width keeps the layout pixel-perfect on mobile.
+      initial-scale=1.0 prevents iOS Safari from auto-zooming on input focus.
+      viewport-fit=cover extends the safe area into the notch / home indicator
+      region on iPhone X and later — important for the fixed status dot position.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
 
-:root {
-  /* Background ramp — deepest black to a barely-visible surface */
-  --color-bg-base:    #0a0a0f;
-  --color-bg-surface: rgba(255, 255, 255, 0.05);
-  --color-bg-overlay: rgba(0, 0, 0, 0.45);
+    <!-- ── PWA meta tags ─────────────────────────────────────────────────── -->
 
-  /* Text — primary for readable copy, muted for hints */
-  --color-text-primary: rgba(255, 255, 255, 0.90);
-  --color-text-muted:   rgba(255, 255, 255, 0.45);
+    <!--
+      Link to the Web App Manifest served from public/manifest.json.
+      Enables "Add to Home Screen" prompts on Android and desktop Chrome.
+      Must be in <head> for the browser to detect it before first paint.
+    -->
+    <link rel="manifest" href="/manifest.json" />
 
-  /* Accent — used sparingly for interactive affordances */
-  --color-accent:       rgba(255, 255, 255, 0.18);
-  --color-accent-hover: rgba(255, 255, 255, 0.28);
+    <!--
+      theme-color tints the browser address bar and status bar on Android
+      to match the app's dark background, reinforcing the immersive aesthetic.
+      Duplicated from manifest.json because Safari reads it from <meta> only.
+    -->
+    <meta name="theme-color" content="#0a0a0f" />
 
-  /* Error state */
-  --color-error: rgba(255, 100, 100, 0.85);
+    <!--
+      apple-mobile-web-app-capable: enables standalone mode on iOS when the
+      page is saved to the home screen (equivalent to manifest display:standalone).
+    -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AuraFlow" />
 
-  /* Border */
-  --color-border: rgba(255, 255, 255, 0.12);
+    <!-- ── Favicon ───────────────────────────────────────────────────────── -->
 
-  /* Shared radii */
-  --radius-pill:   9999px;
-  --radius-medium: 12px;
+    <!--
+      SVG favicon scales perfectly at all sizes and supports dark/light mode
+      via CSS media queries inside the SVG. No need for multiple PNG sizes.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  /* Shared transitions */
-  --transition-base: 0.2s ease;
-  --transition-slow: 0.4s ease;
+    <!--
+      Apple touch icon is used when saving to the iOS home screen.
+      180x180 is the recommended size — covers all current iPhone/iPad models.
+    -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-  /* Typography */
-  --font-sans: system-ui, -apple-system, sans-serif;
-  --font-size-base: 16px;
-  --font-size-sm:   14px;
-  --font-size-xs:   12px;
-}
+    <!-- ── Performance hints ─────────────────────────────────────────────── -->
 
-/* ─── Reset ──────────────────────────────────────────────────────────────── */
+    <!--
+      Preconnect to the jsDelivr CDN that serves MediaPipe WASM and model files.
+      Establishes the TCP + TLS handshake before VisionCapture.ts requests the
+      first model file, reducing perceived load time after the start button click.
+    -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin:     0;
-  padding:    0;
-}
+    <!-- ── Styles ────────────────────────────────────────────────────────── -->
 
-/* ─── Base ───────────────────────────────────────────────────────────────── */
+    <!--
+      Global stylesheet imported here as well as in main.ts.
+      The <link> ensures styles are applied before first paint (no FOUC).
+      The import in main.ts lets Vite process and bundle it with the app chunk.
+    -->
+    <link rel="stylesheet" href="/src/styles.css" />
 
-html {
-  /* Prevent font size inflation on mobile after orientation change */
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust:         100%;
-}
+    <!-- ── Document metadata ─────────────────────────────────────────────── -->
 
-body {
-  background:  var(--color-bg-base);
-  color:       var(--color-text-primary);
-  font-family: var(--font-sans);
-  font-size:   var(--font-size-base);
-  line-height: 1.5;
+    <title>AuraFlow</title>
 
-  /* Ensure the body always fills the viewport, even on mobile with
-     dynamic browser chrome (address bar appearing / disappearing) */
-  min-height: 100dvh;
-  overflow:   hidden;
+    <!--
+      Description is used by search engines and PWA install prompts.
+      Keep it concise — shown truncated in most contexts.
+    -->
+    <meta
+      name="description"
+      content="Gesture-controlled ambient soundscape for meditation, focus, and sleep."
+    />
 
-  /* Prevent text selection during gesture interactions —
-     the user may accidentally drag across text while moving their hand */
-  user-select: none;
-  -webkit-user-select: none;
-}
+    <!--
+      Prevent search engines from indexing the app.
+      AuraFlow is a tool, not content — there is nothing useful to index,
+      and indexing the single-page shell provides no SEO value.
+    -->
+    <meta name="robots" content="noindex, nofollow" />
 
-/* ─── Hidden video element ───────────────────────────────────────────────── */
+  </head>
 
-/**
- * The <video> element feeds frames to MediaPipe but must never be visible.
- * display:none would prevent the browser from rendering frames into it
- * on some platforms, so we use visibility + position instead.
- */
-#input_video {
-  position:   absolute;
-  visibility: hidden;
-  width:      1px;
-  height:     1px;
-  /* Positioned off-screen as a belt-and-braces measure */
-  top:  -9999px;
-  left: -9999px;
-}
+  <body>
 
-/* ─── Debug canvas ───────────────────────────────────────────────────────── */
+    <!--
+      Hidden video element used by VisionCapture.ts as the image source
+      for MediaPipe Hands inference.
 
-/**
- * Transparent overlay canvas used by DebugOverlay.ts.
- * Sits above all other content but ignores pointer events so it
- * never interferes with any future interactive UI elements.
- * The .visible class is added by DebugOverlay when ?debug=true.
- */
-#debug-canvas {
-  position:       fixed;
-  inset:          0;
-  width:          100%;
-  height:         100%;
-  pointer-events: none;
-  opacity:        0;
-  transition:     opacity var(--transition-slow);
-  z-index:        100;
-}
+      Why not create it in JS?
+        Declaring it in HTML guarantees it exists in the DOM before any
+        script runs, avoiding a timing race where VisionCapture.ts calls
+        document.getElementById('input_video') before the element exists.
 
-#debug-canvas.visible {
-  opacity: 1;
-}
+      playsinline: required on iOS to prevent the video from opening in
+        fullscreen. Without it, the camera feed hijacks the viewport.
 
-/* ─── Start button ───────────────────────────────────────────────────────── */
+      autoplay: needed by the Camera utility from @mediapipe/camera_utils
+        to start frame delivery without a separate .play() call.
 
-/**
- * Centred launch button shown before the AudioContext and camera are
- * initialised. Removed from the DOM by main.ts immediately on click.
- *
- * Intentionally minimal — the button should feel like an invitation
- * to enter the experience, not a conventional software UI element.
- */
-#start-btn {
-  /* Centre in viewport */
-  position:  fixed;
-  inset:     0;
-  margin:    auto;
+      muted: required alongside autoplay — browsers block unmuted autoplay.
+        The video element is never heard; it feeds frames to MediaPipe only.
+    -->
+    <video
+      id="input_video"
+      playsinline
+      autoplay
+      muted
+    ></video>
 
-  /* Size */
-  width:     160px;
-  height:    48px;
+    <!--
+      Transparent canvas overlay used by DebugOverlay.ts.
+      Only becomes visible when ?debug=true is in the URL.
+      Declared in HTML for the same reason as the video element —
+      guaranteed DOM presence before any script runs.
+    -->
+    <canvas id="debug-canvas"></canvas>
 
-  /* Appearance */
-  background:    var(--color-bg-surface);
-  border:        1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  color:         var(--color-text-primary);
+    <!--
+      Status indicator anchor element.
+      StatusIndicator.ts mounts the dot inside this element so it has
+      a stable DOM parent. Using a named element rather than document.body
+      makes the indicator easier to find in DevTools and avoids appending
+      directly to body alongside the start button and error message.
+    -->
+    <div id="status-indicator" aria-hidden="true" role="presentation"></div>
 
-  /* Typography */
-  font-family: var(--font-sans);
-  font-size:   var(--font-size-sm);
-  letter-spacing: 0.03em;
+    <!--
+      Application entry point.
+      type="module" is required for ES module imports (import / export).
+      Vite replaces this path with the hashed bundle URL at build time.
+      Placed at the end of <body> so the DOM elements above are parsed
+      and available before any script references them by ID.
+    -->
+    <script type="module" src="/src/main.ts"></script>
 
-  /* Behaviour */
-  cursor:  pointer;
-  outline: none;
-
-  /* Transitions */
-  transition:
-    background    var(--transition-base),
-    border-color  var(--transition-base),
-    transform     var(--transition-base);
-
-  /* Ensure it floats above canvas and indicator */
-  z-index: 200;
-}
-
-#start-btn:hover {
-  background:   var(--color-accent-hover);
-  border-color: rgba(255, 255, 255, 0.22);
-}
-
-#start-btn:active {
-  transform: scale(0.97);
-}
-
-/* Remove the default focus ring and replace with a visible custom one
-   for keyboard accessibility without breaking the minimal aesthetic */
-#start-btn:focus-visible {
-  outline:        2px solid rgba(255, 255, 255, 0.4);
-  outline-offset: 3px;
-}
-
-/* ─── Error message ──────────────────────────────────────────────────────── */
-
-/**
- * Displayed by main.ts when App.init() throws.
- * Styled to be noticeable but not alarming — consistent with the
- * overall muted palette.
- */
-#start-error {
-  position:   fixed;
-  inset:      0;
-  margin:     auto;
-  height:     fit-content;
-
-  color:      var(--color-error);
-  font-size:  var(--font-size-sm);
-  text-align: center;
-  padding:    0 24px;
-
-  /* Fade in so it does not flash abruptly */
-  animation: fadeIn 0.4s ease both;
-
-  z-index: 200;
-}
-
-/* ─── Animations ─────────────────────────────────────────────────────────── */
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0);   }
-}
-
-/* ─── Reduced motion ─────────────────────────────────────────────────────── */
-
-/**
- * Respects the user's operating system preference to reduce motion.
- * Disables all transitions and animations for users who find movement
- * uncomfortable or distracting.
- */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration:   0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration:  0.01ms !important;
-  }
-}
+  </body>
+</html>

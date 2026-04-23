@@ -1,255 +1,81 @@
-/**
- * package.json
- * Project metadata, dependency manifest, and npm script definitions
- * for AuraFlow.
- *
- * Dependency philosophy:
- *  - Runtime dependencies are kept to the absolute minimum —
- *    only @mediapipe/* packages that cannot be replaced by browser APIs.
- *  - The Web Audio API, Canvas API, and service worker are all native,
- *    so no audio or PWA runtime libraries are needed.
- *  - All tooling lives in devDependencies and is never shipped to users.
- */
-{
-  // ── Identity ────────────────────────────────────────────────────────────────
 
+{
+ 
   "name":        "auraflow",
   "version":     "0.1.0",
   "description": "Gesture-controlled ambient soundscape for meditation, focus, and sleep.",
   "license":     "MIT",
 
-  /**
-   * private: true prevents accidental `npm publish` of the application bundle.
-   * AuraFlow is deployed as a static site, not distributed as a package.
-   */
   "private": true,
-
-  // ── Entry points ─────────────────────────────────────────────────────────────
-
-  /**
-   * Not a library — no `main` or `exports` field needed.
-   * The browser entry point is index.html, resolved by Vite.
-   */
-
-  // ── Scripts ──────────────────────────────────────────────────────────────────
 
   "scripts": {
 
-    /**
-     * Start the Vite development server with hot module replacement.
-     * Serves the app at http://localhost:5173 (or HTTPS if VITE_HTTPS=true).
-     * MediaPipe WASM is fetched from the jsDelivr CDN at runtime.
-     */
     "dev": "vite",
 
-    /**
-     * Full production build pipeline:
-     *  1. tsc --noEmit  — type-checks all src/ files, aborts on any error.
-     *                     No .js files are emitted — Vite handles transpilation.
-     *  2. vite build    — bundles, tree-shakes, and outputs to dist/.
-     *                     vite-plugin-pwa generates the Workbox service worker.
-     *
-     * Running tsc before vite ensures type errors are caught before the
-     * bundle is produced, rather than silently shipping broken code.
-     */
+
     "build": "tsc --noEmit && vite build",
 
-    /**
-     * Type-check only, without producing any output files.
-     * Run this in CI or during development to catch type errors quickly
-     * without triggering a full production build.
-     */
     "typecheck": "tsc --noEmit",
 
-    /**
-     * Serve the contents of dist/ on a local preview server.
-     * Use this to verify the production build (including the service worker
-     * and PWA manifest) before deploying to Vercel / Netlify.
-     * Note: the service worker only activates over HTTPS or localhost,
-     * so preview is sufficient for most SW testing.
-     */
     "preview": "vite preview",
 
-    /**
-     * Run the Jest test suite.
-     * Tests live alongside source files as *.test.ts files.
-     * Covers pure functions in utils/math.ts, GestureAnalyzer feature
-     * extraction, and MappingEngine routing logic.
-     */
     "test": "jest --passWithNoTests",
 
-    /**
-     * Run tests in watch mode during development.
-     * Re-runs affected tests on every file save.
-     */
+
     "test:watch": "jest --watch",
 
-    /**
-     * Lint all TypeScript and CSS source files.
-     * ESLint checks TS, Stylelint checks CSS.
-     * Run in CI to enforce consistent code style.
-     */
     "lint": "eslint src --ext .ts && stylelint src/**/*.css",
 
-    /**
-     * Auto-fix all lint issues that can be resolved without human review.
-     * Safe to run before committing — unfixable issues are reported but not
-     * changed, so the working tree is never left in a broken state.
-     */
     "lint:fix": "eslint src --ext .ts --fix && stylelint src/**/*.css --fix"
   },
 
-  // ── Runtime dependencies ──────────────────────────────────────────────────
-
-  /**
-   * Only MediaPipe packages are runtime dependencies.
-   *
-   * @mediapipe/hands:
-   *   Provides the Hands model class, WASM runtime, and NormalizedLandmark
-   *   type definitions. The WASM binary itself is loaded from the jsDelivr
-   *   CDN at runtime (see VisionCapture.ts locateFile), so it is not
-   *   bundled into the application chunk — only the JS wrapper is.
-   *
-   * @mediapipe/camera_utils:
-   *   Provides the Camera helper class that drives the per-frame inference
-   *   loop. Abstracts getUserMedia setup and requestAnimationFrame timing.
-   *
-   * Version pins use ^ (compatible with) rather than exact pins so that
-   * patch-level security fixes are picked up automatically by `npm update`,
-   * while breaking API changes are blocked.
-   */
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/hands":        "^0.4.1675469240"
   },
 
-  // ── Development dependencies ──────────────────────────────────────────────
-
-  /**
-   * All tooling — bundler, type checker, test runner, linters.
-   * None of these are included in the production bundle shipped to users.
-   */
   "devDependencies": {
 
-    // ── Core toolchain ──────────────────────────────────────────────────────
-
-    /**
-     * TypeScript: language compiler and type checker.
-     * Pinned to ^5.4 for const type parameters and improved inference.
-     * Used via `tsc --noEmit` for type checking; Vite uses esbuild for
-     * actual transpilation so tsc version does not affect build speed.
-     */
     "typescript": "^5.4.0",
 
-    /**
-     * Vite: development server and production bundler.
-     * v5 is required for the `build.target: 'es2020'` setting and the
-     * `resolve.alias` TypeScript path support used in this project.
-     */
     "vite": "^5.2.0",
 
-    /**
-     * vite-plugin-pwa: Workbox-powered service worker generation.
-     * Replaces the hand-written service-worker.js that was in the original
-     * architecture. Generates a precache manifest and runtime caching rules
-     * from the Workbox config in vite.config.ts on every production build.
-     */
     "vite-plugin-pwa": "^0.19.0",
 
-    // ── Testing ─────────────────────────────────────────────────────────────
-
-    /**
-     * Jest: test runner for unit tests.
-     * ts-jest transforms TypeScript test files without a separate
-     * compilation step — Jest sees native TS source.
-     *
-     * jest-environment-jsdom provides a simulated browser DOM so tests
-     * that reference document or window don't require a real browser.
-     */
+ 
     "jest":                  "^29.7.0",
     "ts-jest":               "^29.1.0",
     "@types/jest":           "^29.5.0",
     "jest-environment-jsdom": "^29.7.0",
 
-    // ── Linting ─────────────────────────────────────────────────────────────
-
-    /**
-     * ESLint + TypeScript parser and rules.
-     * @typescript-eslint/parser reads TypeScript AST.
-     * @typescript-eslint/eslint-plugin enforces TS-specific rules
-     * (no-explicit-any, consistent-type-imports, etc.).
-     */
     "eslint":                            "^8.57.0",
     "@typescript-eslint/parser":         "^7.0.0",
     "@typescript-eslint/eslint-plugin":  "^7.0.0",
 
-    /**
-     * Stylelint: CSS linter for styles.css.
-     * stylelint-config-standard enforces consistent CSS conventions
-     * (property order, shorthand usage, no duplicate selectors).
-     */
     "stylelint":                 "^16.0.0",
     "stylelint-config-standard": "^36.0.0",
 
-    // ── Types ───────────────────────────────────────────────────────────────
 
-    /**
-     * Type definitions for Node.js built-ins used in vite.config.ts
-     * (node:url, node:path). Not needed in src/ which targets the browser.
-     */
     "@types/node": "^20.0.0"
   },
 
-  // ── Engine requirements ───────────────────────────────────────────────────
 
-  /**
-   * Declare the minimum Node.js version required to run the toolchain.
-   * Node 18 is the current LTS and is required by:
-   *  - Vite 5 (drops support for Node 16)
-   *  - ESLint 8 flat config
-   *  - The `node:` protocol imports in vite.config.ts
-   *
-   * The `npm` constraint aligns with Node 18's bundled npm version.
-   */
   "engines": {
     "node": ">=18.0.0",
     "npm":  ">=9.0.0"
   },
 
-  // ── Jest configuration ─────────────────────────────────────────────────────
 
-  /**
-   * Jest config is colocated here rather than in jest.config.ts to reduce
-   * the number of root-level config files. Extracted to jest.config.ts
-   * if the configuration grows beyond a few lines.
-   */
   "jest": {
 
-    /**
-     * ts-jest transforms .ts files so Jest can execute them directly
-     * without a separate tsc compile step.
-     */
     "preset": "ts-jest",
 
-    /**
-     * jsdom simulates a browser environment so tests can reference
-     * document, window, and AudioContext without a real browser.
-     */
     "testEnvironment": "jsdom",
 
-    /**
-     * Map the @/* alias to src/* so Jest resolves the same paths
-     * that Vite and tsc resolve at build time.
-     */
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
     },
 
-    /**
-     * Collect coverage from all .ts files in src/ except type-only
-     * files (types/) and entry points (main.ts, App.ts) which are
-     * better tested via integration or end-to-end tests.
-     */
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/types/**",
